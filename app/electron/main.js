@@ -1,5 +1,7 @@
-const { app, BrowserWindow, session } = require('electron');
+const { app, BrowserWindow, session, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
 
 let mainWindow;
 
@@ -39,22 +41,37 @@ app.on('ready', () => {
 });
 
 // Daemon management
-const { fork } = require('child_process');
+const { fork, spawn } = require('child_process');
 let daemonProcess = null;
 
 function startDaemon() {
-  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-  // In dev, daemon is in ../daemon. In prod (if packaged), path logic would need to adjust.
-  // Assuming dev environment given the context.
-  const daemonPath = path.join(__dirname, '../../daemon/tracker.js');
-  const daemonCwd = path.join(__dirname, '../../daemon');
+  const isDev = !app.isPackaged;
+
+  let daemonPath, daemonCwd;
+
+  if (isDev) {
+    // Development: daemon is in ../daemon relative to app folder
+    daemonPath = path.join(__dirname, '../../daemon/tracker.js');
+    daemonCwd = path.join(__dirname, '../../daemon');
+  } else {
+    // Production: daemon is in Resources/daemon
+    daemonPath = path.join(process.resourcesPath, 'daemon/tracker.js');
+    daemonCwd = path.join(process.resourcesPath, 'daemon');
+  }
 
   console.log('Starting daemon from:', daemonPath);
+  console.log('Daemon CWD:', daemonCwd);
+
+  // Check if daemon exists
+  if (!fs.existsSync(daemonPath)) {
+    console.error('Daemon not found at:', daemonPath);
+    return;
+  }
 
   try {
     daemonProcess = fork(daemonPath, [], {
       cwd: daemonCwd,
-      stdio: 'pipe' // Capture output
+      stdio: 'pipe'
     });
 
     daemonProcess.stdout.on('data', (data) => {
@@ -63,6 +80,10 @@ function startDaemon() {
 
     daemonProcess.stderr.on('data', (data) => {
       console.error(`Daemon Error: ${data}`);
+    });
+
+    daemonProcess.on('error', (err) => {
+      console.error('Daemon process error:', err);
     });
 
     console.log('Daemon started with PID:', daemonProcess.pid);
@@ -95,5 +116,55 @@ app.on('will-quit', stopDaemon);
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+
+// IPC Handlers
+const focusCloneDir = path.join(os.homedir(), '.focusclone');
+const userFilePath = path.join(focusCloneDir, 'user.json');
+const pauseFilePath = path.join(focusCloneDir, 'paused');
+
+// Ensure .focusclone directory exists
+if (!fs.existsSync(focusCloneDir)) {
+  fs.mkdirSync(focusCloneDir, { recursive: true });
+}
+
+ipcMain.handle('write-user-file', async (event, userData) => {
+  try {
+    fs.writeFileSync(userFilePath, JSON.stringify(userData, null, 2));
+    return { success: true };
+  } catch (error) {
+    console.error('Error writing user file:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('clear-user-file', async () => {
+  try {
+    if (fs.existsSync(userFilePath)) {
+      fs.unlinkSync(userFilePath);
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('Error clearing user file:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-tracking-paused', async () => {
+  return fs.existsSync(pauseFilePath);
+});
+
+ipcMain.handle('set-tracking-paused', async (event, paused) => {
+  try {
+    if (paused) {
+      fs.writeFileSync(pauseFilePath, '');
+    } else if (fs.existsSync(pauseFilePath)) {
+      fs.unlinkSync(pauseFilePath);
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('Error setting tracking paused:', error);
+    return { success: false, error: error.message };
   }
 });

@@ -1,5 +1,8 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
 import { supabase } from './db.js';
 
 const execAsync = promisify(exec);
@@ -9,10 +12,43 @@ const POLL_INTERVAL_MS = 2000;        // 2 seconds
 const IDLE_THRESHOLD_MS = 300000;     // 5 minutes
 const TITLE_CHANGE_DEBOUNCE_MS = 10000; // 10 seconds - ignore rapid title changes within same app
 
+// User ID from file (set by Electron app on login)
+let currentUserId = null;
+
+function loadUserId() {
+  const userFilePath = join(homedir(), '.focusclone', 'user.json');
+  try {
+    if (existsSync(userFilePath)) {
+      const data = JSON.parse(readFileSync(userFilePath, 'utf-8'));
+      currentUserId = data.userId;
+      console.log('Loaded user ID:', currentUserId);
+    } else {
+      console.log('No user file found, tracking disabled');
+      currentUserId = null;
+    }
+  } catch (error) {
+    console.error('Error loading user file:', error.message);
+    currentUserId = null;
+  }
+}
+
 // State
 let lastWindow = null;
 let lastTimestamp = null;
 let lastTitleChangeTime = null;       // Track when title last changed (for debouncing)
+let isPaused = false;                 // Tracking pause state
+
+function loadPauseState() {
+  const userFilePath = join(homedir(), '.focusclone', 'user.json');
+  try {
+    if (existsSync(userFilePath)) {
+      const data = JSON.parse(readFileSync(userFilePath, 'utf-8'));
+      isPaused = data.paused === true;
+    }
+  } catch (error) {
+    // Ignore errors, default to not paused
+  }
+}
 
 // AppleScript to get active window info on macOS
 const APPLESCRIPT = `
@@ -110,13 +146,19 @@ function normalizeTitle(title) {
 }
 
 async function saveEvent(timestamp, appName, windowTitle, url, durationSeconds, isIdle) {
+  if (!currentUserId) {
+    console.log('No user logged in, skipping event save');
+    return;
+  }
+
   const { error } = await supabase.from('events').insert({
     timestamp: formatTimestamp(timestamp),
     app_name: appName,
     window_title: windowTitle,
     url: url,
     duration_seconds: durationSeconds,
-    is_idle: isIdle
+    is_idle: isIdle,
+    user_id: currentUserId
   });
 
   if (error) {
@@ -136,6 +178,10 @@ async function getSystemIdleTime() {
 }
 
 async function track() {
+  // Check if tracking is paused
+  loadPauseState();
+  if (isPaused) return;
+
   try {
     const now = new Date();
 
@@ -288,6 +334,15 @@ process.on('SIGTERM', shutdown);
 // Main
 async function main() {
   console.log('Initializing tracker with Supabase...');
+
+  // Load user ID from file
+  loadUserId();
+
+  if (!currentUserId) {
+    console.log('No user logged in. Tracker will wait for login.');
+    process.exit(0);
+  }
+
   console.log('Tracker started. Polling every 2 seconds...');
   console.log('Press Ctrl+C to stop.\n');
 

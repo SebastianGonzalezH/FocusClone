@@ -1,119 +1,94 @@
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
 import { supabase } from './db.js';
 
 // Configuration
 const CATEGORIZE_INTERVAL_MS = 60000;  // 1 minute
+const SHORT_EVENT_THRESHOLD_SECONDS = 10;  // Events shorter than this go to Miscellaneous
 
-async function categorize() {
+// Load current user ID from file
+function loadUserId() {
+  const userFilePath = join(homedir(), '.focusclone', 'user.json');
   try {
-    const startTime = Date.now();
-
-    // Get all rules
-    const { data: rules, error: rulesError } = await supabase
-      .from('rules')
-      .select('id, match_string, match_type, category_id');
-
-    if (rulesError) {
-      console.error('Error fetching rules:', rulesError.message);
-      return;
+    if (existsSync(userFilePath)) {
+      const data = JSON.parse(readFileSync(userFilePath, 'utf-8'));
+      return data.userId;
     }
+  } catch (error) {
+    console.error('Error loading user file:', error.message);
+  }
+  return null;
+}
 
-    // Get Idle category id
-    const { data: idleCategory } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('name', 'Idle')
-      .single();
+// Auto-categorize idle events and short-duration events
+async function categorizeAutomaticEvents() {
+  const userId = loadUserId();
+  if (!userId) {
+    console.log(`[${new Date().toISOString()}] No user logged in, skipping categorization`);
+    return;
+  }
 
-    const idleCategoryId = idleCategory?.id;
+  console.log(`[${new Date().toISOString()}] Running auto-categorization for user: ${userId}`);
 
-    // Find uncategorized events (events not in event_categories)
-    const { data: allEvents, error: eventsError } = await supabase
-      .from('events')
-      .select('id, app_name, window_title, url, is_idle');
-
-    if (eventsError) {
-      console.error('Error fetching events:', eventsError.message);
-      return;
-    }
-
-    // Get already categorized event IDs
+  try {
+    // Get all categorized event IDs first (shared lookup)
     const { data: categorizedEvents } = await supabase
       .from('event_categories')
       .select('event_id');
 
     const categorizedIds = new Set((categorizedEvents || []).map(e => e.event_id));
+    console.log(`[${new Date().toISOString()}] Found ${categorizedIds.size} already categorized events`);
 
-    // Filter to uncategorized events
-    const uncategorizedEvents = (allEvents || []).filter(e => !categorizedIds.has(e.id));
+    // --- 1. Categorize Short Events (<= 10s) as Miscellaneous ---
+    const { data: miscCategory, error: miscError } = await supabase
+      .from('categories')
+      .select('id, name')
+      .eq('user_id', userId)
+      .ilike('name', '%miscellaneous%')
+      .single();
 
-    if (uncategorizedEvents.length === 0) {
-      console.log(`[${new Date().toISOString()}] No uncategorized events found.`);
-      return;
-    }
+    console.log(`[${new Date().toISOString()}] Miscellaneous category lookup:`, miscCategory, miscError?.message);
 
-    console.log(`[${new Date().toISOString()}] Processing ${uncategorizedEvents.length} uncategorized events...`);
+    if (miscCategory?.id) {
+      const { data: shortEvents, error: shortError } = await supabase
+        .from('events')
+        .select('id, duration_seconds')
+        .eq('user_id', userId)
+        .lte('duration_seconds', SHORT_EVENT_THRESHOLD_SECONDS)
+        .eq('is_idle', false);
 
-    let categorizedCount = 0;
-    const categoriesToInsert = [];
+      console.log(`[${new Date().toISOString()}] Found ${shortEvents?.length || 0} short events (<=10s), error: ${shortError?.message}`);
 
-    for (const event of uncategorizedEvents) {
-      let matchedCategoryId = null;
+      const uncategorizedShortEvents = (shortEvents || []).filter(e => !categorizedIds.has(e.id));
+      console.log(`[${new Date().toISOString()}] ${uncategorizedShortEvents.length} of those are uncategorized`);
 
-      // Check if it's an idle event
-      if (event.is_idle && idleCategoryId) {
-        matchedCategoryId = idleCategoryId;
-      } else {
-        // Try to match against rules
-        for (const rule of rules || []) {
-          const matchString = rule.match_string.toLowerCase();
-          let fieldValue = '';
+      if (uncategorizedShortEvents.length > 0) {
+        console.log(`[${new Date().toISOString()}] Auto-categorizing ${uncategorizedShortEvents.length} short events as Miscellaneous...`);
 
-          switch (rule.match_type) {
-            case 'app':
-              fieldValue = (event.app_name || '').toLowerCase();
-              break;
-            case 'title':
-              fieldValue = (event.window_title || '').toLowerCase();
-              break;
-            case 'url':
-              fieldValue = (event.url || '').toLowerCase();
-              break;
-          }
+        const miscCategoriesToInsert = uncategorizedShortEvents.map(event => ({
+          event_id: event.id,
+          category_id: miscCategory.id,
+          is_manual: false
+        }));
 
-          if (fieldValue.includes(matchString)) {
-            matchedCategoryId = rule.category_id;
-            break;  // Use first matching rule
-          }
+        const { error: miscInsertError } = await supabase
+          .from('event_categories')
+          .upsert(miscCategoriesToInsert, { onConflict: 'event_id' });
+
+        if (miscInsertError) {
+          console.error('Error inserting miscellaneous categories:', miscInsertError.message);
+        } else {
+          uncategorizedShortEvents.forEach(e => categorizedIds.add(e.id));
+          console.log(`[${new Date().toISOString()}] Successfully categorized ${uncategorizedShortEvents.length} short events as Miscellaneous`);
         }
       }
-
-      // If a category was matched, add to batch
-      if (matchedCategoryId !== null) {
-        categoriesToInsert.push({
-          event_id: event.id,
-          category_id: matchedCategoryId,
-          is_manual: false
-        });
-        categorizedCount++;
-      }
+    } else {
+      console.log(`[${new Date().toISOString()}] No Miscellaneous category found for user - please create one`);
     }
-
-    // Batch insert categorizations
-    if (categoriesToInsert.length > 0) {
-      const { error: insertError } = await supabase
-        .from('event_categories')
-        .upsert(categoriesToInsert, { onConflict: 'event_id' });
-
-      if (insertError) {
-        console.error('Error inserting categories:', insertError.message);
-      }
-    }
-
-    const elapsed = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] Categorized ${categorizedCount}/${uncategorizedEvents.length} events in ${elapsed}ms`);
 
   } catch (error) {
-    console.error('Error categorizing:', error.message);
+    console.error('Error in auto-categorization:', error.message);
   }
 }
 
@@ -128,15 +103,14 @@ process.on('SIGTERM', shutdown);
 
 // Main
 async function main() {
-  console.log('Initializing categorizer with Supabase...');
-  console.log('Categorizer started. Running every 1 minute...');
+  console.log('Initializing categorizer (idle + short events)...');
   console.log('Press Ctrl+C to stop.\n');
 
   // Run immediately
-  await categorize();
+  await categorizeAutomaticEvents();
 
   // Then run every minute
-  setInterval(categorize, CATEGORIZE_INTERVAL_MS);
+  setInterval(categorizeAutomaticEvents, CATEGORIZE_INTERVAL_MS);
 }
 
 main().catch(err => {
