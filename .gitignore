@@ -24,6 +24,7 @@ npm-debug.log*
 
 # Electron
 out/
+app/release/
 
 # SQLite database files (if any)
 *.db

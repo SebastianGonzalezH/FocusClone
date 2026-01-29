@@ -3,9 +3,13 @@ import { promisify } from 'util';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-import { supabase } from './db.js';
+import 'dotenv/config';
 
 const execAsync = promisify(exec);
+
+// Supabase configuration - only ANON_KEY needed (safe to distribute)
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 // Configuration
 const POLL_INTERVAL_MS = 2000;        // 2 seconds
@@ -151,17 +155,35 @@ async function saveEvent(timestamp, appName, windowTitle, url, durationSeconds, 
     return;
   }
 
-  const { error } = await supabase.from('events').insert({
-    timestamp: formatTimestamp(timestamp),
-    app_name: appName,
-    window_title: windowTitle,
-    url: url,
-    duration_seconds: durationSeconds,
-    is_idle: isIdle,
-    user_id: currentUserId
-  });
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('Supabase not configured');
+    return;
+  }
 
-  if (error) {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/track-event`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        user_id: currentUserId,
+        timestamp: formatTimestamp(timestamp),
+        app_name: appName,
+        window_title: windowTitle,
+        url: url,
+        duration_seconds: durationSeconds,
+        is_idle: isIdle
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Error saving event:', error.error || response.statusText);
+    }
+  } catch (error) {
     console.error('Error saving event to Supabase:', error.message);
   }
 }
@@ -333,7 +355,12 @@ process.on('SIGTERM', shutdown);
 
 // Main
 async function main() {
-  console.log('Initializing tracker with Supabase...');
+  console.log('Initializing tracker...');
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('Missing SUPABASE_URL or SUPABASE_ANON_KEY in environment');
+    process.exit(1);
+  }
 
   // Load user ID from file
   loadUserId();

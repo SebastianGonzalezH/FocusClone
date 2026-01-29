@@ -176,3 +176,41 @@ ipcMain.handle('set-tracking-paused', async (event, paused) => {
     return { success: false, error: error.message };
   }
 });
+
+// Auth session persistence (stores to file for reliability)
+const authSessionPath = path.join(kronosDir, 'auth-session.json');
+
+ipcMain.handle('save-auth-session', async (event, session) => {
+  try {
+    fs.writeFileSync(authSessionPath, JSON.stringify(session, null, 2));
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving auth session:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-auth-session', async () => {
+  try {
+    if (fs.existsSync(authSessionPath)) {
+      const data = fs.readFileSync(authSessionPath, 'utf-8');
+      return JSON.parse(data);
+    }
+    return null;
+  } catch (error) {
+    console.error('Error reading auth session:', error);
+    return null;
+  }
+});
+
+ipcMain.handle('clear-auth-session', async () => {
+  try {
+    if (fs.existsSync(authSessionPath)) {
+      fs.unlinkSync(authSessionPath);
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('Error clearing auth session:', error);
+    return { success: false, error: error.message };
+  }
+});

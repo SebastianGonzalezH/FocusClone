@@ -48,7 +48,7 @@ function NavItem({ to, icon: Icon, isActive }: { to: string; icon: typeof Layout
 }
 
 function AppLayout() {
-  const { signOut, user } = useAuth();
+  const { signOut, user, loading } = useAuth();
   const [trackingPaused, setTrackingPaused] = useState(false);
   const location = useLocation();
 
@@ -60,6 +60,20 @@ function AppLayout() {
       });
     }
   }, []);
+
+  // Show loading screen while auth is resolving (prevents sidebar flash)
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-background items-center justify-center">
+        <span className="text-display text-2xl text-accent">K</span>
+      </div>
+    );
+  }
+
+  // Redirect to landing if not authenticated
+  if (!user) {
+    return <Navigate to="/landing" replace />;
+  }
 
   async function toggleTracking() {
     const newPaused = !trackingPaused;
