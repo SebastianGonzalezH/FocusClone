@@ -69,9 +69,9 @@ function startDaemon() {
   }
 
   try {
-    daemonProcess = fork(daemonPath, [], {
+    daemonProcess = spawn('node', [daemonPath], {
       cwd: daemonCwd,
-      stdio: 'pipe'
+      stdio: ['ignore', 'pipe', 'pipe']
     });
 
     daemonProcess.stdout.on('data', (data) => {
@@ -120,13 +120,12 @@ app.on('window-all-closed', () => {
 });
 
 // IPC Handlers
-const focusCloneDir = path.join(os.homedir(), '.focusclone');
-const userFilePath = path.join(focusCloneDir, 'user.json');
-const pauseFilePath = path.join(focusCloneDir, 'paused');
+const kronosDir = path.join(os.homedir(), '.kronos');
+const userFilePath = path.join(kronosDir, 'user.json');
 
-// Ensure .focusclone directory exists
-if (!fs.existsSync(focusCloneDir)) {
-  fs.mkdirSync(focusCloneDir, { recursive: true });
+// Ensure .kronos directory exists
+if (!fs.existsSync(kronosDir)) {
+  fs.mkdirSync(kronosDir, { recursive: true });
 }
 
 ipcMain.handle('write-user-file', async (event, userData) => {
@@ -152,16 +151,25 @@ ipcMain.handle('clear-user-file', async () => {
 });
 
 ipcMain.handle('get-tracking-paused', async () => {
-  return fs.existsSync(pauseFilePath);
+  try {
+    if (fs.existsSync(userFilePath)) {
+      const data = JSON.parse(fs.readFileSync(userFilePath, 'utf-8'));
+      return data.paused === true;
+    }
+    return false;
+  } catch (error) {
+    return false;
+  }
 });
 
 ipcMain.handle('set-tracking-paused', async (event, paused) => {
   try {
-    if (paused) {
-      fs.writeFileSync(pauseFilePath, '');
-    } else if (fs.existsSync(pauseFilePath)) {
-      fs.unlinkSync(pauseFilePath);
+    let userData = {};
+    if (fs.existsSync(userFilePath)) {
+      userData = JSON.parse(fs.readFileSync(userFilePath, 'utf-8'));
     }
+    userData.paused = paused;
+    fs.writeFileSync(userFilePath, JSON.stringify(userData, null, 2));
     return { success: true };
   } catch (error) {
     console.error('Error setting tracking paused:', error);

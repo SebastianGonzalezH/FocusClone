@@ -9,7 +9,7 @@ const SHORT_EVENT_THRESHOLD_SECONDS = 10;  // Events shorter than this go to Mis
 
 // Load current user ID from file
 function loadUserId() {
-  const userFilePath = join(homedir(), '.focusclone', 'user.json');
+  const userFilePath = join(homedir(), '.kronos', 'user.json');
   try {
     if (existsSync(userFilePath)) {
       const data = JSON.parse(readFileSync(userFilePath, 'utf-8'));

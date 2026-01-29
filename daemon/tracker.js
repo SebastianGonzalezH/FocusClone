@@ -16,7 +16,7 @@ const TITLE_CHANGE_DEBOUNCE_MS = 10000; // 10 seconds - ignore rapid title chang
 let currentUserId = null;
 
 function loadUserId() {
-  const userFilePath = join(homedir(), '.focusclone', 'user.json');
+  const userFilePath = join(homedir(), '.kronos', 'user.json');
   try {
     if (existsSync(userFilePath)) {
       const data = JSON.parse(readFileSync(userFilePath, 'utf-8'));
@@ -39,7 +39,7 @@ let lastTitleChangeTime = null;       // Track when title last changed (for debo
 let isPaused = false;                 // Tracking pause state
 
 function loadPauseState() {
-  const userFilePath = join(homedir(), '.focusclone', 'user.json');
+  const userFilePath = join(homedir(), '.kronos', 'user.json');
   try {
     if (existsSync(userFilePath)) {
       const data = JSON.parse(readFileSync(userFilePath, 'utf-8'));
@@ -206,8 +206,8 @@ async function track() {
 
       // Fix Electron name
       if (appName === 'Electron') {
-        if (windowTitle.startsWith('FocusClone')) {
-          appName = 'FocusClone';
+        if (windowTitle.startsWith('Kronos')) {
+          appName = 'Kronos';
         } else {
           appName = 'Antigravity';
         }

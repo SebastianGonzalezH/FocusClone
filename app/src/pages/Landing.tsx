@@ -8,7 +8,7 @@ export default function Landing() {
       {/* Header */}
       <header className="border-b border-border">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="text-display text-2xl text-accent">F</span>
+          <span className="text-display text-2xl text-accent">K</span>
           <div className="flex items-center gap-6">
             <Link to="/login" className="text-sm text-muted hover:text-white transition-colors">
               Sign in
@@ -51,28 +51,133 @@ export default function Landing() {
         </motion.div>
       </section>
 
-      {/* Screenshot/Preview */}
-      <section className="max-w-4xl mx-auto px-6 pb-24">
+      {/* App Preview - Dashboard */}
+      <section className="max-w-5xl mx-auto px-6 pb-16">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="premium-card p-2 shadow-gold"
         >
-          <div className="bg-card aspect-video flex items-center justify-center">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-8 mb-8">
-                <div className="text-center">
-                  <p className="text-4xl font-semibold text-white">6h 42m</p>
-                  <p className="text-[10px] text-muted uppercase tracking-wider mt-2">Total Today</p>
+          <p className="text-[10px] text-muted uppercase tracking-widest text-center mb-6">Dashboard</p>
+          <div className="premium-card p-4 shadow-glow">
+            {/* Dashboard Mockup */}
+            <div className="bg-background p-6">
+              {/* Stats Row */}
+              <div className="flex items-center gap-8 mb-8">
+                <div>
+                  <p className="text-4xl font-semibold text-white tracking-tight">6h 42m</p>
+                  <p className="text-[10px] text-muted uppercase tracking-wider mt-1">Total Today</p>
                 </div>
                 <div className="w-px h-12 bg-border" />
-                <div className="text-center">
-                  <p className="text-4xl font-semibold text-accent">4h 15m</p>
-                  <p className="text-[10px] text-muted uppercase tracking-wider mt-2">Productive</p>
+                <div>
+                  <p className="text-4xl font-semibold text-accent tracking-tight">4h 15m</p>
+                  <p className="text-[10px] text-muted uppercase tracking-wider mt-1">Productive</p>
                 </div>
               </div>
-              <p className="text-xs text-muted">Dashboard Preview</p>
+
+              {/* Timeline Bars */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-muted w-10">9 AM</span>
+                  <div className="flex-1 h-6 bg-card overflow-hidden flex">
+                    <div className="h-full bg-accent/80" style={{ width: '60%' }} />
+                    <div className="h-full bg-muted/30" style={{ width: '25%' }} />
+                    <div className="h-full bg-red-500/50" style={{ width: '15%' }} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-muted w-10">10 AM</span>
+                  <div className="flex-1 h-6 bg-card overflow-hidden flex">
+                    <div className="h-full bg-accent/80" style={{ width: '45%' }} />
+                    <div className="h-full bg-blue-500/50" style={{ width: '35%' }} />
+                    <div className="h-full bg-muted/30" style={{ width: '20%' }} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-muted w-10">11 AM</span>
+                  <div className="flex-1 h-6 bg-card overflow-hidden flex">
+                    <div className="h-full bg-accent/80" style={{ width: '80%' }} />
+                    <div className="h-full bg-muted/30" style={{ width: '20%' }} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-muted w-10">12 PM</span>
+                  <div className="flex-1 h-6 bg-card overflow-hidden flex">
+                    <div className="h-full bg-muted/30" style={{ width: '15%' }} />
+                    <div className="h-full bg-orange-500/50" style={{ width: '70%' }} />
+                    <div className="h-full bg-muted/30" style={{ width: '15%' }} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-muted w-10">1 PM</span>
+                  <div className="flex-1 h-6 bg-card overflow-hidden flex">
+                    <div className="h-full bg-accent/80" style={{ width: '55%' }} />
+                    <div className="h-full bg-blue-500/50" style={{ width: '30%' }} />
+                    <div className="h-full bg-muted/30" style={{ width: '15%' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* App Preview - Activity Log */}
+      <section className="max-w-5xl mx-auto px-6 pb-24">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <p className="text-[10px] text-muted uppercase tracking-widest text-center mb-6">Activity Log</p>
+          <div className="premium-card p-4 shadow-glow">
+            {/* Activity Log Mockup */}
+            <div className="bg-background">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-card/50 text-[10px] text-muted uppercase tracking-wider">
+                <div className="col-span-3">Application</div>
+                <div className="col-span-4">Window</div>
+                <div className="col-span-2">Category</div>
+                <div className="col-span-2">Time</div>
+                <div className="col-span-1 text-right">Duration</div>
+              </div>
+
+              {/* Activity Rows */}
+              <div className="grid grid-cols-12 gap-4 px-4 py-3 border-t border-border text-sm">
+                <div className="col-span-3 text-white font-medium">VS Code</div>
+                <div className="col-span-4 text-muted truncate">Landing.tsx - Kronos</div>
+                <div className="col-span-2"><span className="text-accent text-xs">Development</span></div>
+                <div className="col-span-2 text-muted">2:45 PM</div>
+                <div className="col-span-1 text-right text-white">45m</div>
+              </div>
+              <div className="grid grid-cols-12 gap-4 px-4 py-3 border-t border-border text-sm">
+                <div className="col-span-3 text-white font-medium">Chrome</div>
+                <div className="col-span-4 text-muted truncate">Tailwind CSS Documentation</div>
+                <div className="col-span-2"><span className="text-blue-400 text-xs">Research</span></div>
+                <div className="col-span-2 text-muted">2:30 PM</div>
+                <div className="col-span-1 text-right text-white">15m</div>
+              </div>
+              <div className="grid grid-cols-12 gap-4 px-4 py-3 border-t border-border text-sm">
+                <div className="col-span-3 text-white font-medium">Figma</div>
+                <div className="col-span-4 text-muted truncate">Kronos Design System</div>
+                <div className="col-span-2"><span className="text-purple-400 text-xs">Design</span></div>
+                <div className="col-span-2 text-muted">2:00 PM</div>
+                <div className="col-span-1 text-right text-white">30m</div>
+              </div>
+              <div className="grid grid-cols-12 gap-4 px-4 py-3 border-t border-border text-sm">
+                <div className="col-span-3 text-white font-medium">Slack</div>
+                <div className="col-span-4 text-muted truncate">team-engineering</div>
+                <div className="col-span-2"><span className="text-orange-400 text-xs">Communication</span></div>
+                <div className="col-span-2 text-muted">1:45 PM</div>
+                <div className="col-span-1 text-right text-white">12m</div>
+              </div>
+              <div className="grid grid-cols-12 gap-4 px-4 py-3 border-t border-border text-sm">
+                <div className="col-span-3 text-white font-medium">VS Code</div>
+                <div className="col-span-4 text-muted truncate">index.css - Kronos</div>
+                <div className="col-span-2"><span className="text-accent text-xs">Development</span></div>
+                <div className="col-span-2 text-muted">1:15 PM</div>
+                <div className="col-span-1 text-right text-white">30m</div>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -138,7 +243,7 @@ export default function Landing() {
           >
             <p className="text-[10px] text-muted uppercase tracking-widest mb-4">Simple Pricing</p>
             <div className="mb-6">
-              <span className="text-5xl font-semibold text-white">$7</span>
+              <span className="text-5xl font-semibold text-white">$9</span>
               <span className="text-muted">/month</span>
             </div>
 
@@ -172,9 +277,9 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-between">
-          <span className="text-display text-lg text-accent">F</span>
+          <span className="text-display text-lg text-accent">K</span>
           <p className="text-xs text-muted">
-            © {new Date().getFullYear()} FocusClone. All rights reserved.
+            © {new Date().getFullYear()} Kronos. All rights reserved.
           </p>
         </div>
       </footer>

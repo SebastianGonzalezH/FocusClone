@@ -1,12 +1,13 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Paywall from './Paywall';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, profile, loading, profileLoading } = useAuth();
+  const { user, profile, loading, profileLoading, isSubscribed } = useAuth();
 
   // Wait for auth to load
   if (loading) {
@@ -33,6 +34,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // If user hasn't completed onboarding, redirect to template selection
   if (!profile || !profile.onboarding_completed) {
     return <Navigate to="/onboarding/template" replace />;
+  }
+
+  // If trial expired and not subscribed, show paywall
+  if (!isSubscribed) {
+    return <Paywall />;
   }
 
   return <>{children}</>;

@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { Clock, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 interface TrialBannerProps {
   daysRemaining: number;

@@ -1,7 +1,7 @@
 {
-  "name": "focusclone-daemon",
+  "name": "kronos-daemon",
   "version": "1.0.0",
-  "description": "Background tracker daemon for FocusClone",
+  "description": "Background tracker daemon for Kronos",
   "main": "tracker.js",
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "categorize": "node categorizer.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "dotenv": "^16.4.0"
+    "@supabase/supabase-js": "^2.90.1",
+    "dotenv": "^16.6.1"
   }
 }

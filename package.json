@@ -1,22 +1,19 @@
 {
-  "name": "focusclone",
+  "name": "kronos",
   "version": "1.0.0",
   "description": "A high-performance desktop time-tracking application",
   "private": true,
-  "workspaces": [
-    "app",
-    "daemon"
-  ],
+  "workspaces": {
+    "packages": ["daemon"],
+    "nohoist": ["**/electron", "**/electron-builder"]
+  },
   "scripts": {
-    "app:dev": "npm run dev --workspace=app",
-    "app:build": "npm run build --workspace=app",
+    "app:dev": "cd app && npm run electron:dev",
+    "app:build": "cd app && npm run electron:build",
     "daemon:start": "npm run start --workspace=daemon",
     "daemon:categorize": "npm run categorize --workspace=daemon"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "electron": "^39.2.7"
   }
 }

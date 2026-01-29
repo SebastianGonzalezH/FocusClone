@@ -1,165 +1,77 @@
-# FocusClone - Development Plan
+# Kronos - Development Plan
 
-## Phase 1: Architecture & Database
-- [x] Initialize project structure (`/app`, `/daemon`, `/db`)
-- [x] Create root package.json for monorepo
-- [x] Create SQLite schema with `events`, `categories`, `rules` tables
-- [x] Create `enriched_logs` SQL view
-- [x] Seed default categories
+## Phase 10: Launch Preparation
 
-## Phase 2: The Watcher (Daemon)
-- [x] Setup daemon package.json with dependencies
-- [x] Create `tracker.js` with 2-second polling loop
-- [x] Integrate `active-win` for window tracking
-- [x] Integrate `desktop-idle` for idle detection (5 min threshold)
-- [x] Create `categorizer.js` for bulk rule application (1 min interval)
+### Completed
+- [x] Update UI colors from gold to emerald green (#22c55e) → Reverted to gold (#D4AF37)
+- [x] Update landing page with $9/mo pricing
+- [x] Update Paywall component with $9/mo pricing
+- [x] Add trial expiration check to ProtectedRoute
+- [x] Create SQL migration for 3-day trial setup
+- [x] Update checkout function amount to S/35 (~$9)
+- [x] Add Dashboard and Activity Log previews to landing page
 
-## Phase 3: The Frontend (Electron)
-- [x] Setup Electron + Vite + React + TypeScript in `/app`
-- [x] Configure Tailwind CSS with Zinc dark theme
-- [x] Install recharts and tanstack-table
-- [x] Create Dashboard page with Timeline and Donut chart
-- [x] Create Event Log page with data table
-- [x] Configure Electron main process for SQLite access
+### Manual Setup Required (Supabase Dashboard)
+- [ ] Run `supabase/migrations/001_trial_setup.sql` in SQL Editor
+- [ ] Configure Culqi environment variables if not already set
+- [ ] Test full payment flow end-to-end
 
----
-
-## Phase 6: Premium Luxury UI Redesign
-
-### Design Direction
-**Aesthetic**: "Quiet Luxury" - Sharp, clean, minimalist, high contrast. Think premium watch brands, luxury automotive interfaces, exclusive membership portals.
-
-**Color Palette**:
-- **Black**: Pure `#000000` base, deep `#080808` for cards
-- **White**: `#FFFFFF` for primary text, `#666666` for muted
-- **Gold**: Rich classic gold `#D4AF37`, highlight `#E8C547`
-
-**Typography**:
-- Display: "Instrument Serif" for brand/headings (editorial, refined)
-- Body: "Inter" with tight tracking (clean, professional)
-
-**Key Principles**:
-- Ultra-thin 1px borders
-- Zero border radius (sharp, precise corners)
-- Generous whitespace with asymmetric layouts
-- Subtle gold accents on interactive elements
-- Minimalist iconography with thin strokes
-
-### Implementation Tasks
-
-#### Phase 6.1: Design Foundation
-- [x] Update index.html - Add Instrument Serif + Inter fonts
-- [x] Update tailwind.config.js - Premium color palette, typography, sharp borders
-- [x] Update index.css - Refined design tokens, luxury component classes
-
-#### Phase 6.2: Core Layout
-- [x] Redesign App.tsx sidebar - Ultra-minimal with gold active states
-- [x] Update page container and transitions
-
-#### Phase 6.3: Dashboard Redesign
-- [x] Redesign metric cards - Large numbers, uppercase labels, gold accents
-- [x] Update date range selector - Minimal underline/text style
-- [x] Refine charts - Dark theme with gold highlights
-- [x] Update ranked lists - Elegant typography and spacing
-
-#### Phase 6.4: Event Log Redesign
-- [x] Redesign table - Refined headers, sharp corners
-- [x] Update controls - Premium search and buttons
-- [x] Refine pagination - Minimal, elegant
-
-#### Phase 6.5: Categories Page
-- [x] Update category management UI
-- [x] Refine color picker with gold border
-
-#### Phase 6.6: Auth Pages
-- [x] Redesign Login - Premium entrance experience
-- [x] Redesign Signup - Match login aesthetic
-
-#### Phase 6.7: Polish
-- [x] Onboarding Template Selection page updated
-- [x] Build verified successful
+### Files Changed
+| File | Change |
+|------|--------|
+| `app/tailwind.config.js` | Emerald green color palette |
+| `app/src/index.css` | Updated CSS variables and classes |
+| `app/src/pages/Landing.tsx` | $9/mo pricing |
+| `app/src/components/Paywall.tsx` | $9/mo pricing |
+| `app/src/components/ProtectedRoute.tsx` | Shows Paywall when trial expires |
+| `supabase/migrations/001_trial_setup.sql` | 3-day trial trigger |
+| `supabase/functions/create-checkout/index.ts` | Updated to S/35 |
 
 ---
 
-## Phase 6 Review
+## Phase 9: Fix Google OAuth & App Launch Issues
 
-### Summary
-Implemented a complete premium luxury UI redesign with a "Quiet Luxury" aesthetic. The app now features a refined black, white, and gold color scheme with sharp corners, elegant typography, and subtle gold accents.
+### Issues Identified
+1. **Google OAuth black screen**: After login, app shows black screen because `onAuthStateChange` only handled `SIGNED_OUT` events
+2. **Electron won't launch**: `ELECTRON_RUN_AS_NODE=1` environment variable (set by Claude Code) was forcing Electron to run as plain Node.js
 
-### Files Modified
+### Fixes Applied
 
-| File | Changes |
-|------|---------|
-| `app/index.html` | Added Instrument Serif + Inter fonts from Google Fonts |
-| `app/tailwind.config.js` | Premium color palette, zero border-radius, gold shadows, letterSpacing |
-| `app/src/index.css` | Redesigned design system with premium component classes |
-| `app/src/App.tsx` | Ultra-minimal sidebar with gold active indicator, refined page transitions |
-| `app/src/pages/Dashboard.tsx` | Premium metric cards, refined charts, elegant typography |
-| `app/src/pages/EventLog.tsx` | Sharp table design, premium controls, refined pagination |
-| `app/src/pages/Categories.tsx` | Premium card layout, refined color picker |
-| `app/src/pages/Login.tsx` | Luxury entrance experience with serif brand mark |
-| `app/src/pages/Signup.tsx` | Matching premium auth design |
-| `app/src/pages/onboarding/TemplateSelection.tsx` | Refined onboarding with gold accents |
-
-### Key Design Elements
-
-1. **Typography**: Instrument Serif for display/brand, Inter for body text
-2. **Color System**:
-   - Black `#000000` (base), `#080808` (cards)
-   - White `#FFFFFF` (text), `#666666` (muted)
-   - Gold `#D4AF37` (accent), `#E8C547` (hover)
-3. **Borders**: Ultra-thin 1px, zero border-radius throughout
-4. **Components**:
-   - `.premium-card` - Sharp bordered cards
-   - `.btn-primary` - Gold buttons with glow
-   - `.input-premium` - Refined form inputs
-   - `.metric-label` - 10px uppercase tracking
-5. **Animations**: Subtle Framer Motion with spring physics
-6. **Icons**: Lucide icons at 1.5 strokeWidth for thin aesthetic
-
-### Build Status
-- `npm run build` passes successfully
-- Run `npm run dev` in `/app` to preview
-
----
-
-## Phase 7: UI Refinements
-
-### Tasks
-- [x] Fix Dashboard date filtering - Changed from UTC to local time
-- [x] Add Custom date range option with start/end date pickers
-- [x] Move Categorize button from Dashboard to Activity Log
-- [x] Rename "Events" page to "Activity Log"
-- [x] Add Settings page with common options
-- [x] Build verified successful
-
----
-
-## Phase 7 Review
-
-### Summary
-Implemented user-requested refinements to improve usability and add a Settings page.
-
-### Files Modified
-
-| File | Changes |
-|------|---------|
-| `app/src/pages/Dashboard.tsx` | Fixed date filtering to use local time instead of UTC; Added Custom date range with date pickers; Removed Categorize button |
-| `app/src/pages/EventLog.tsx` | Renamed header to "Activity Log"; Added Categorize button and functionality |
-| `app/src/App.tsx` | Added Settings nav item and route |
-| `app/src/pages/Settings.tsx` | New file - Settings page with theme, tracking, notifications, and data options |
+- [x] Updated `AuthContext.tsx` to handle `SIGNED_IN` events in `onAuthStateChange`
+- [x] Modified `app/package.json` to unset `ELECTRON_RUN_AS_NODE` before launching Electron
+- [x] Restructured workspace to install electron locally in app folder
 
 ### Key Changes
 
-1. **Date Filtering Fix**: Dashboard now uses local time for date calculations instead of UTC, fixing the "Today" view showing wrong data
-2. **Custom Date Range**: Added a "Custom" option in the date range selector with start/end date pickers
-3. **Activity Log**: Renamed "Events" to "Activity Log" and moved the Categorize button there
-4. **Settings Page**: New settings page with:
-   - Light Mode toggle (coming soon)
-   - Idle Detection timeout selector
-   - Auto Sync toggle
-   - Desktop Notifications toggle
-   - Data Retention selector
+| File | Change |
+|------|--------|
+| `app/src/contexts/AuthContext.tsx` | Added `SIGNED_IN` event handler to update user/session state |
+| `app/package.json` | Changed script: `ELECTRON_RUN_AS_NODE= electron .` |
+| `package.json` | Removed electron from root, moved to app-only install |
 
-### Build Status
-- `npm run build` passes successfully
+### Root Cause Analysis
+
+**ELECTRON_RUN_AS_NODE=1** - This environment variable is set by Electron-based tools (like Claude Code) and tells any child Electron process to run as Node.js instead of as an Electron app. This caused:
+- `process.type` to be `undefined` instead of `'browser'`
+- `require('electron')` to resolve to the npm package (path string) instead of Electron's internal API
+
+---
+
+## Previous Phases (Completed)
+
+<details>
+<summary>Phase 1-8 (Click to expand)</summary>
+
+## Phase 8: Critical Bug Fixes
+- [x] Fix directory path in `main.js` - change `.focusclone` to `.kronos`
+- [x] Fix pause mechanism in `main.js` - write `paused` flag to `user.json`
+- [x] Fix daemon spawn in `main.js` - use `spawn` instead of `fork`
+
+## Phase 1-7
+- [x] Architecture & Database setup
+- [x] Daemon tracker implementation
+- [x] Electron + React frontend
+- [x] Premium UI redesign
+- [x] UI refinements
+
+</details>

@@ -422,23 +422,28 @@ function StackedBarTimeline({
       <p className="metric-label mb-4">Activity Timeline</p>
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <BarChart
+            data={data}
+            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+            barSize={24}
+            barGap={0}
+          >
             <XAxis
               dataKey="name"
-              tick={{ fill: '#666666', fontSize: 10 }}
-              axisLine={{ stroke: '#1A1A1A' }}
+              tick={{ fill: '#71717a', fontSize: 10 }}
+              axisLine={{ stroke: '#262626' }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: '#666666', fontSize: 10 }}
-              axisLine={{ stroke: '#1A1A1A' }}
+              tick={{ fill: '#71717a', fontSize: 10 }}
+              axisLine={false}
               tickLine={false}
               tickFormatter={(value) => `${Math.round(value / 60)}m`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#080808',
-                border: '1px solid #1A1A1A',
+                backgroundColor: '#141414',
+                border: '1px solid #262626',
                 borderRadius: '0',
                 fontSize: '12px',
               }}
@@ -451,7 +456,7 @@ function StackedBarTimeline({
                 dataKey={cat.name}
                 stackId="a"
                 fill={cat.color}
-                radius={0}
+                radius={[2, 2, 0, 0]}
               />
             ))}
           </BarChart>

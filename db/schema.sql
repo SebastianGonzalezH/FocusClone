@@ -1,4 +1,4 @@
--- FocusClone Database Schema
+-- Kronos Database Schema
 
 -- Events table: stores raw window tracking data
 CREATE TABLE IF NOT EXISTS events (

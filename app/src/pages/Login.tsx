@@ -50,7 +50,7 @@ export default function Login() {
           transition={{ delay: 0.2 }}
           className="text-center mb-12"
         >
-          <span className="text-display text-5xl text-accent">F</span>
+          <span className="text-display text-5xl text-accent">K</span>
           <p className="text-xs text-muted mt-4 uppercase tracking-widest">Time Tracking</p>
         </motion.div>
 

@@ -73,8 +73,8 @@ function AppLayout() {
     <div className="flex h-screen bg-background">
       {/* Sidebar - Ultra minimal, sharp */}
       <nav className="w-14 bg-background border-r border-border flex flex-col items-center pt-8 pb-6">
-        {/* Logo - Serif F for premium feel */}
-        <span className="text-display text-xl text-accent mb-10">F</span>
+        {/* Logo - Serif K for Kronos */}
+        <span className="text-display text-xl text-accent mb-10">K</span>
 
         {/* Navigation */}
         <div className="flex flex-col items-center gap-1">

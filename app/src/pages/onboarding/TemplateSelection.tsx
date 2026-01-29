@@ -178,7 +178,7 @@ export default function TemplateSelection() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <span className="text-display text-4xl text-accent">F</span>
+          <span className="text-display text-4xl text-accent">K</span>
           <h1 className="text-xl font-medium mt-6 mb-2 text-white">Choose Your Template</h1>
           <p className="text-xs text-muted uppercase tracking-wider">
             Select a category template that matches your workflow

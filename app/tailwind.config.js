@@ -39,8 +39,9 @@ export default {
       boxShadow: {
         'card': '0 1px 3px rgba(0, 0, 0, 0.5)',
         'card-hover': '0 4px 16px rgba(0, 0, 0, 0.6)',
-        'gold': '0 0 20px rgba(212, 175, 55, 0.15)',
-        'gold-sm': '0 0 10px rgba(212, 175, 55, 0.1)',
+        'glow': '0 0 20px rgba(212, 175, 55, 0.15)',
+        'glow-sm': '0 0 10px rgba(212, 175, 55, 0.1)',
+        'glow-lg': '0 0 30px rgba(212, 175, 55, 0.2)',
       },
       animation: {
         'skeleton': 'skeleton 1.5s ease-in-out infinite',

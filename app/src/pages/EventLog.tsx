@@ -119,6 +119,15 @@ export default function EventLog() {
       categoryMap.set(ec.event_id, ec.category_id);
     });
 
+    console.log('fetchEvents debug:', {
+      eventsCount: events?.length,
+      eventCategoriesCount: eventCategories?.length,
+      categoriesCount: cats.length,
+      categoryIds: cats.map(c => c.id),
+      sampleEventId: events?.[0]?.id,
+      sampleCategoryIdFromMap: categoryMap.get(events?.[0]?.id),
+    });
+
     const transformedEvents: Event[] = (events || []).map((event: any) => {
       const categoryId = categoryMap.get(event.id);
       const category = categoryId ? cats.find(c => c.id === categoryId) : null;
@@ -203,10 +212,13 @@ export default function EventLog() {
     try {
       const miscCategory = categories.find(c => c.name.toLowerCase().includes('miscellaneous'));
 
+      // Order by timestamp DESC and increase limit to get recent events first
       const { data: allEvents } = await supabase
         .from('events')
         .select('id, app_name, window_title, url, duration_seconds')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('timestamp', { ascending: false })
+        .limit(2000);
 
       if (!allEvents || allEvents.length === 0) {
         setCategorizeMessage('No events found');
@@ -215,14 +227,37 @@ export default function EventLog() {
         return;
       }
 
+      // If no categories exist, all events are uncategorized
+      if (categories.length === 0) {
+        setCategorizeMessage('No categories found. Please create categories first.');
+        setTimeout(() => setCategorizeMessage(null), 3000);
+        setCategorizing(false);
+        return;
+      }
+
       const eventIds = allEvents.map(e => e.id);
       const { data: categorizedEvents } = await supabase
         .from('event_categories')
-        .select('event_id')
+        .select('event_id, category_id')
         .in('event_id', eventIds);
 
-      const categorizedIds = new Set((categorizedEvents || []).map(e => e.event_id));
+      // Only consider events as "categorized" if their category still exists
+      const validCategoryIds = new Set(categories.map(c => c.id));
+      const categorizedIds = new Set(
+        (categorizedEvents || [])
+          .filter(e => validCategoryIds.has(e.category_id))
+          .map(e => e.event_id)
+      );
       const uncategorizedAll = allEvents.filter(e => !categorizedIds.has(e.id));
+
+      console.log('Categorize debug:', {
+        totalEvents: allEvents.length,
+        categoriesCount: categories.length,
+        validCategoryIds: Array.from(validCategoryIds),
+        categorizedEventsFromDB: categorizedEvents?.length || 0,
+        categorizedIdsCount: categorizedIds.size,
+        uncategorizedCount: uncategorizedAll.length
+      });
 
       if (uncategorizedAll.length === 0) {
         setCategorizeMessage('All events are already categorized!');

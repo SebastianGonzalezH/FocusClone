@@ -135,12 +135,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    // Listen for auth changes (sign out only - sign in is handled by getSession above)
+    // Listen for auth changes - only handle SIGNED_OUT
+    // SIGNED_IN is handled by getSession() above to avoid race conditions
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event) => {
+      async (event, newSession) => {
         console.log('AuthContext: onAuthStateChange', event);
 
-        // Only handle sign out - sign in is handled by getSession() on page load
         if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
@@ -167,7 +167,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: window.location.origin,
+        queryParams: {
+          prompt: 'select_account'
+        }
       }
     });
     return { error };

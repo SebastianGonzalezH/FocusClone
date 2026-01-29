@@ -53,9 +53,9 @@ export default function Paywall({ onClose }: PaywallProps) {
 
         <div className="premium-card p-6 mb-6 text-left">
           <div className="flex items-baseline justify-between mb-4">
-            <span className="text-sm text-muted">FocusClone Pro</span>
+            <span className="text-sm text-muted">Kronos Pro</span>
             <div>
-              <span className="text-2xl font-semibold text-white">$7</span>
+              <span className="text-2xl font-semibold text-white">$9</span>
               <span className="text-muted">/month</span>
             </div>
           </div>

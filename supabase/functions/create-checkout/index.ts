@@ -58,7 +58,7 @@ serve(async (req) => {
         body: JSON.stringify({
           email: user.email,
           first_name: user.email?.split("@")[0] || "User",
-          last_name: "FocusClone",
+          last_name: "Kronos",
         }),
       });
 
@@ -82,9 +82,9 @@ serve(async (req) => {
     // This returns the data needed to initialize the Culqi checkout widget
     const checkoutData = {
       public_key: Deno.env.get("CULQI_PUBLIC_KEY"),
-      amount: 2500, // S/25 in cents
+      amount: 3500, // S/35 in cents (~$9 USD)
       currency: "PEN",
-      description: "FocusClone Pro - Monthly Subscription",
+      description: "Kronos - Monthly Subscription",
       customer_id: customerId,
       metadata: {
         user_id: user.id,

@@ -77,7 +77,7 @@ function SettingSelect({ label, description, icon, value, options, onChange }: S
 }
 
 export default function Settings() {
-  const { user, profile, isSubscribed, daysRemaining } = useAuth();
+  const { user, profile, daysRemaining } = useAuth();
   const [cancelLoading, setCancelLoading] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [notifications, setNotifications] = useState(false);
@@ -87,11 +87,11 @@ export default function Settings() {
 
   // Load settings from localStorage on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('focusclone-theme');
-    const savedNotifications = localStorage.getItem('focusclone-notifications');
-    const savedIdleTimeout = localStorage.getItem('focusclone-idle-timeout');
-    const savedAutoSync = localStorage.getItem('focusclone-auto-sync');
-    const savedDataRetention = localStorage.getItem('focusclone-data-retention');
+    const savedTheme = localStorage.getItem('kronos-theme');
+    const savedNotifications = localStorage.getItem('kronos-notifications');
+    const savedIdleTimeout = localStorage.getItem('kronos-idle-timeout');
+    const savedAutoSync = localStorage.getItem('kronos-auto-sync');
+    const savedDataRetention = localStorage.getItem('kronos-data-retention');
 
     if (savedTheme) setTheme(savedTheme as 'dark' | 'light');
     if (savedNotifications) setNotifications(savedNotifications === 'true');
@@ -102,25 +102,25 @@ export default function Settings() {
 
   // Save theme and apply to document
   useEffect(() => {
-    localStorage.setItem('focusclone-theme', theme);
+    localStorage.setItem('kronos-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
   // Save other settings
   useEffect(() => {
-    localStorage.setItem('focusclone-notifications', String(notifications));
+    localStorage.setItem('kronos-notifications', String(notifications));
   }, [notifications]);
 
   useEffect(() => {
-    localStorage.setItem('focusclone-idle-timeout', idleTimeout);
+    localStorage.setItem('kronos-idle-timeout', idleTimeout);
   }, [idleTimeout]);
 
   useEffect(() => {
-    localStorage.setItem('focusclone-auto-sync', String(autoSync));
+    localStorage.setItem('kronos-auto-sync', String(autoSync));
   }, [autoSync]);
 
   useEffect(() => {
-    localStorage.setItem('focusclone-data-retention', dataRetention);
+    localStorage.setItem('kronos-data-retention', dataRetention);
   }, [dataRetention]);
 
   return (
@@ -160,7 +160,7 @@ export default function Settings() {
             </div>
             <div>
               <div className="text-sm font-medium text-white">
-                {profile?.subscription_status === 'active' ? 'FocusClone Pro' :
+                {profile?.subscription_status === 'active' ? 'Kronos Pro' :
                  profile?.subscription_status === 'trialing' ? 'Free Trial' :
                  'Free Plan'}
               </div>
@@ -174,7 +174,7 @@ export default function Settings() {
           {profile?.subscription_status !== 'active' && (
             <motion.button
               onClick={async () => {
-                const { data, error } = await supabase.functions.invoke('create-checkout');
+                const { data } = await supabase.functions.invoke('create-checkout');
                 if (data?.url) window.location.href = data.url;
               }}
               className="btn-primary text-xs px-4 py-2"
@@ -300,7 +300,7 @@ export default function Settings() {
 
       {/* Version */}
       <div className="text-center text-xs text-muted pt-4">
-        FocusClone v1.0.0
+        Kronos v1.0.0
       </div>
     </div>
   );

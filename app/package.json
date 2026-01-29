@@ -1,19 +1,19 @@
 {
-  "name": "focusclone-app",
+  "name": "kronos-app",
   "version": "1.0.0",
-  "description": "FocusClone - Time Tracking App",
+  "description": "Kronos - Time Tracking App",
   "main": "electron/main.js",
-  "author": "FocusClone",
+  "author": "Kronos",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:build": "vite build && electron-builder --mac"
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && ELECTRON_RUN_AS_NODE= electron .\"",
+    "electron:build": "vite build && electron-builder --mac --arm64 --x64"
   },
   "build": {
-    "appId": "com.focusclone.app",
-    "productName": "FocusClone",
+    "appId": "com.kronos.app",
+    "productName": "Kronos",
     "directories": {
       "output": "release"
     },
@@ -26,19 +26,33 @@
       {
         "from": "../daemon",
         "to": "daemon",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "target": ["dmg"],
-      "icon": "electron/icon.icns"
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
     },
     "dmg": {
-      "title": "FocusClone",
+      "title": "Kronos",
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     }
   },
