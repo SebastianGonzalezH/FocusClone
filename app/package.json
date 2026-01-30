@@ -36,7 +36,9 @@
     "protocols": [
       {
         "name": "Kronos",
-        "schemes": ["kronos"]
+        "schemes": [
+          "kronos"
+        ]
       }
     ],
     "mac": {
@@ -68,11 +70,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.ico"
@@ -104,6 +110,7 @@
     "concurrently": "^8.2.2",
     "electron": "^28.3.3",
     "electron-builder": "^24.9.1",
+    "png-to-ico": "^2.1.8",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
