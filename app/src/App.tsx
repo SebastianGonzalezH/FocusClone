@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
 import { LayoutDashboard, List, Tags, LogOut, Power, Settings } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -165,7 +165,7 @@ function AppLayout() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AuthProvider>
         <Routes>
           <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
@@ -175,7 +175,7 @@ function App() {
           <Route path="/*" element={<AppLayout />} />
         </Routes>
       </AuthProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
