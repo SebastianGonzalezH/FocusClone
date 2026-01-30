@@ -402,6 +402,7 @@ async function track() {
   try {
     const now = new Date();
     const window = await getActiveWindow();
+    console.log(`[TRACK] Got window: ${window ? window.owner.name + ' - "' + window.title + '"' : 'NULL'}`);
 
     let appName = 'Unknown';
     let windowTitle = '';
@@ -545,7 +546,12 @@ function checkParentAlive() {
 }
 
 async function main() {
-  console.log(`Initializing tracker on ${platform()}...`);
+  console.log('='.repeat(60));
+  console.log('KRONOS DAEMON STARTING');
+  console.log(`Platform: ${platform()}`);
+  console.log(`IS_WINDOWS: ${IS_WINDOWS}, IS_MACOS: ${IS_MACOS}`);
+  console.log(`Supabase URL: ${SUPABASE_URL ? 'Configured' : 'MISSING'}`);
+  console.log('='.repeat(60));
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.error('Missing SUPABASE_URL or SUPABASE_ANON_KEY in environment');
@@ -553,6 +559,7 @@ async function main() {
   }
 
   loadUserId();
+  console.log(`User ID: ${currentUserId || 'Not loaded yet'}`);
 
   if (!currentUserId) {
     console.log('No user logged in. Tracker will poll until user logs in...');

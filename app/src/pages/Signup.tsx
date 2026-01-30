@@ -10,6 +10,7 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const { signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
@@ -35,7 +36,15 @@ export default function Signup() {
       setError(error.message);
       setLoading(false);
     } else {
-      navigate('/onboarding/template');
+      // Show success message instead of immediately navigating
+      // User needs to verify their email first
+      setSignupSuccess(true);
+      setLoading(false);
+
+      // Navigate to template selection where they'll see the verification message
+      setTimeout(() => {
+        navigate('/onboarding/template');
+      }, 2000);
     }
   }
 
@@ -82,6 +91,16 @@ export default function Signup() {
               className="bg-rose-500/10 border border-rose-500/30 text-rose-400 px-4 py-3 mb-6 text-xs"
             >
               {error}
+            </motion.div>
+          )}
+
+          {signupSuccess && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-accent/10 border border-accent/30 text-accent px-4 py-3 mb-6 text-xs"
+            >
+              Account created! Please check your email to verify your account.
             </motion.div>
           )}
 

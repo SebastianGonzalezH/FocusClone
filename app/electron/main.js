@@ -73,6 +73,28 @@ function handleOAuthCallback(url) {
 const IS_MACOS = process.platform === 'darwin';
 const IS_WINDOWS = process.platform === 'win32';
 
+// Helper function to log to both main console and renderer console
+function logToRenderer(message, isError = false) {
+  const logMessage = typeof message === 'object' ? JSON.stringify(message) : String(message);
+
+  // Log to main process console (won't show on Windows but helps in dev)
+  if (isError) {
+    console.error(logMessage);
+  } else {
+    console.log(logMessage);
+  }
+
+  // Forward to renderer console (will show in DevTools)
+  // Check that window exists, has webContents, and webContents is not destroyed
+  if (mainWindow && mainWindow.webContents && !mainWindow.webContents.isDestroyed()) {
+    try {
+      mainWindow.webContents.executeJavaScript(`console.${isError ? 'error' : 'log'}(${JSON.stringify('[MAIN] ' + logMessage)})`);
+    } catch (e) {
+      // Renderer might not be ready yet or already destroyed
+    }
+  }
+}
+
 function createWindow() {
   const windowOptions = {
     width: 1200,
@@ -133,12 +155,15 @@ function startDaemon() {
     daemonCwd = path.join(process.resourcesPath, 'daemon');
   }
 
-  console.log('Starting daemon from:', daemonPath);
-  console.log('Daemon CWD:', daemonCwd);
+  logToRenderer('='.repeat(60));
+  logToRenderer('STARTING KRONOS DAEMON');
+  logToRenderer('Daemon path: ' + daemonPath);
+  logToRenderer('Daemon CWD: ' + daemonCwd);
+  logToRenderer('Is development: ' + isDev);
 
   // Check if daemon exists
   if (!fs.existsSync(daemonPath)) {
-    console.error('Daemon not found at:', daemonPath);
+    logToRenderer('ERROR: Daemon not found at: ' + daemonPath, true);
     return;
   }
 
@@ -148,6 +173,9 @@ function startDaemon() {
     const nodeExecutable = isDev ? 'node' : process.execPath;
     const spawnEnv = isDev ? process.env : { ...process.env, ELECTRON_RUN_AS_NODE: '1' };
 
+    logToRenderer('Node executable: ' + nodeExecutable);
+    logToRenderer('Spawning daemon process...');
+
     daemonProcess = spawn(nodeExecutable, [daemonPath], {
       cwd: daemonCwd,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -155,26 +183,33 @@ function startDaemon() {
     });
 
     daemonProcess.stdout.on('data', (data) => {
-      console.log(`Daemon: ${data}`);
+      logToRenderer('Daemon: ' + data.toString().trim());
     });
 
     daemonProcess.stderr.on('data', (data) => {
-      console.error(`Daemon Error: ${data}`);
+      logToRenderer('Daemon Error: ' + data.toString().trim(), true);
     });
 
     daemonProcess.on('error', (err) => {
-      console.error('Daemon process error:', err);
+      logToRenderer('Daemon process error: ' + err.message, true);
     });
 
-    console.log('Daemon started with PID:', daemonProcess.pid);
+    daemonProcess.on('exit', (code, signal) => {
+      logToRenderer('Daemon exited with code ' + code + ' and signal ' + signal);
+      daemonProcess = null;
+    });
+
+    logToRenderer('✓ Daemon spawned successfully with PID: ' + daemonProcess.pid);
+    logToRenderer('='.repeat(60));
   } catch (err) {
-    console.error('Failed to start daemon:', err);
+    logToRenderer('✗ Failed to start daemon: ' + err.message, true);
+    logToRenderer(err.stack, true);
   }
 }
 
 function stopDaemon() {
   if (daemonProcess) {
-    console.log('Stopping daemon...');
+    logToRenderer('Stopping daemon...');
     daemonProcess.kill();
     daemonProcess = null;
   }

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Rocket, Briefcase, Palette, Check, ArrowRight } from 'lucide-react';
+import { Rocket, Briefcase, Palette, Check, ArrowRight, Mail } from 'lucide-react';
 
 interface Template {
   id: string;
@@ -167,6 +167,51 @@ export default function TemplateSelection() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-muted">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show email verification message if user is not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full"
+        >
+          <div className="premium-card p-8 text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring' }}
+              className="inline-flex items-center justify-center w-16 h-16 bg-accent/10 border border-accent/20 mb-6"
+            >
+              <Mail size={32} className="text-accent" strokeWidth={1.5} />
+            </motion.div>
+
+            <h1 className="text-xl font-medium mb-3 text-white">Verify Your Email</h1>
+            <p className="text-sm text-muted mb-6 leading-relaxed">
+              We've sent a verification link to your email address.
+              Please check your inbox and click the link to continue setting up your account.
+            </p>
+
+            <div className="bg-card border border-border p-4 mb-6">
+              <p className="text-xs text-muted">
+                <span className="text-accent font-medium">Tip:</span> Check your spam folder if you don't see the email.
+              </p>
+            </div>
+
+            <motion.button
+              onClick={() => navigate('/login')}
+              className="btn-primary w-full"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Back to Login
+            </motion.button>
+          </div>
+        </motion.div>
       </div>
     );
   }
