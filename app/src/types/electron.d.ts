@@ -17,9 +17,11 @@ export interface ElectronAPI {
   // OAuth
   openExternalUrl: (url: string) => Promise<{ success: boolean; error?: string }>;
   onOAuthCallback: (callback: (data: OAuthCallbackData) => void) => void;
-  // Accessibility permission
+  // Accessibility permission (macOS only)
   checkAccessibilityPermission: () => Promise<{ granted: boolean }>;
   openAccessibilitySettings: () => Promise<{ success: boolean; error?: string }>;
+  // Platform info
+  getPlatform: () => Promise<'darwin' | 'win32' | 'linux'>;
 }
 
 declare global {

@@ -7,56 +7,49 @@ Port Kronos to Windows while maintaining feature parity with macOS. Focus on UX 
 
 ### Pre-Work
 - [x] Commit all macOS changes to main branch
-- [ ] Create `windows-port` branch from main
+- [x] Create `windows-port` branch from main
 
-### Windows-Specific Changes Needed
+### Completed Tasks
 
-#### 1. Daemon Tracker (`daemon/tracker.js`)
-macOS uses AppleScript which doesn't exist on Windows. Need to replace:
+- [x] Create cross-platform `tracker.js` with PowerShell for Windows (no native modules needed)
+- [x] Add Windows idle time detection via PowerShell + user32.dll
+- [x] Update Electron main.js with platform-specific code
+- [x] Update AccessibilityBanner to only show on macOS
+- [x] Add Windows build targets to package.json (NSIS installer + portable)
+- [x] Expose platform info via IPC
 
-| Feature | macOS | Windows Approach |
-|---------|-------|------------------|
-| Get active window | AppleScript + System Events | PowerShell or `active-win` npm package |
-| Get browser URL | AppleScript to Chrome/Safari | Likely not possible without extension (accept limitation) |
-| Get system idle time | `ioreg -c IOHIDSystem` | PowerShell or `user32.dll` via native addon |
-
-**Approach**: Use `active-win` npm package (cross-platform native module) instead of AppleScript
-
-#### 2. Electron Main Process (`app/electron/main.js`)
-| Feature | macOS | Windows Approach |
-|---------|-------|------------------|
-| Accessibility permission check | AppleScript test | Not needed on Windows |
-| Open Settings | `x-apple.systempreferences:` URL | Windows doesn't need this |
-| Custom protocol | `kronos://` | Works on Windows (registry-based) |
-| `titleBarStyle: 'hiddenInset'` | macOS-specific | Use `frame: false` + custom titlebar OR standard frame |
-
-#### 3. Build Configuration (`app/package.json`)
-- Add Windows targets to electron-builder config
-- Configure Windows installer (NSIS or portable)
-
-#### 4. Permission Banner (`app/src/components/AccessibilityBanner.tsx`)
-- Only show on macOS (Windows doesn't need Accessibility permission)
-
-### Task List
-
-- [ ] Install `active-win` package in daemon
-- [ ] Create cross-platform `tracker.js` with platform detection
-- [ ] Add Windows idle time detection
-- [ ] Update Electron main.js with platform-specific code
-- [ ] Update AccessibilityBanner to only show on macOS
-- [ ] Add Windows build targets to package.json
+### Remaining Tasks
 - [ ] Test on Windows (VM or real machine)
-- [ ] Build Windows installer
+- [ ] Create Windows icon (icon.ico) in build folder
+- [ ] Build and test Windows installer
 
-### Files to Modify
+### Implementation Details
+
+#### Tracker (`daemon/tracker.js`)
+Used PowerShell scripts instead of native modules for simplicity:
+- **Active window**: PowerShell with user32.dll P/Invoke for `GetForegroundWindow`
+- **Idle time**: PowerShell with user32.dll P/Invoke for `GetLastInputInfo`
+- **Browser URLs**: Not available on Windows (window title used instead)
+
+#### Platform Detection
+- `process.platform` used throughout (`darwin` = macOS, `win32` = Windows)
+- Accessibility banner only shows on macOS
+- `titleBarStyle: 'hiddenInset'` only applied on macOS
+
+#### Build Config
+- NSIS installer (allows custom install directory)
+- Portable version (no install needed)
+- x64 architecture only
+
+### Files Modified
 | File | Changes |
 |------|---------|
-| `daemon/package.json` | Add `active-win` dependency |
-| `daemon/tracker.js` | Platform detection, Windows tracking |
-| `app/electron/main.js` | Platform-specific permission handling |
-| `app/electron/preload.js` | Expose platform info |
+| `daemon/tracker.js` | Cross-platform with PowerShell for Windows |
+| `app/electron/main.js` | Platform detection, conditional titlebar |
+| `app/electron/preload.js` | Added `getPlatform()` IPC |
+| `app/src/types/electron.d.ts` | Added platform type |
 | `app/src/components/AccessibilityBanner.tsx` | macOS-only display |
-| `app/package.json` | Windows build config |
+| `app/package.json` | Windows build scripts + NSIS config |
 
 ---
 

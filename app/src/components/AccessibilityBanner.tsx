@@ -5,6 +5,7 @@ import { AlertTriangle, ExternalLink, X, RefreshCw } from 'lucide-react';
 export function AccessibilityBanner() {
   const [showBanner, setShowBanner] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [isMacOS, setIsMacOS] = useState(false);
 
   async function checkPermission() {
     if (!window.electronAPI?.checkAccessibilityPermission) return;
@@ -21,14 +22,25 @@ export function AccessibilityBanner() {
   }
 
   useEffect(() => {
-    // Check on mount
-    checkPermission();
+    // Only show on macOS - Windows doesn't need accessibility permission
+    async function init() {
+      if (window.electronAPI?.getPlatform) {
+        const platform = await window.electronAPI.getPlatform();
+        setIsMacOS(platform === 'darwin');
+        if (platform === 'darwin') {
+          checkPermission();
+        }
+      }
+    }
+    init();
 
     // Re-check when window gains focus (user might have granted permission)
-    const handleFocus = () => checkPermission();
+    const handleFocus = () => {
+      if (isMacOS) checkPermission();
+    };
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  }, [isMacOS]);
 
   async function openSettings() {
     if (window.electronAPI?.openAccessibilitySettings) {
@@ -36,7 +48,8 @@ export function AccessibilityBanner() {
     }
   }
 
-  if (!showBanner) return null;
+  // Only show on macOS when permission is not granted
+  if (!isMacOS || !showBanner) return null;
 
   return (
     <AnimatePresence>

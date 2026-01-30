@@ -9,7 +9,9 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && ELECTRON_RUN_AS_NODE= electron .\"",
-    "electron:build": "vite build && electron-builder --mac --arm64 --x64"
+    "electron:build": "vite build && electron-builder --mac --arm64 --x64",
+    "electron:build:win": "vite build && electron-builder --win --x64",
+    "electron:build:all": "vite build && electron-builder --mac --arm64 --x64 --win --x64"
   },
   "build": {
     "appId": "com.kronos.app",
@@ -61,6 +63,25 @@
           "path": "/Applications"
         }
       ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   },
   "dependencies": {

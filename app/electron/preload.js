@@ -16,7 +16,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onOAuthCallback: (callback) => {
     ipcRenderer.on('oauth-callback', (event, data) => callback(data));
   },
-  // Accessibility permission check
+  // Accessibility permission check (macOS only)
   checkAccessibilityPermission: () => ipcRenderer.invoke('check-accessibility-permission'),
-  openAccessibilitySettings: () => ipcRenderer.invoke('open-accessibility-settings')
+  openAccessibilitySettings: () => ipcRenderer.invoke('open-accessibility-settings'),
+  // Platform info
+  getPlatform: () => ipcRenderer.invoke('get-platform')
 });

@@ -69,20 +69,30 @@ function handleOAuthCallback(url) {
   }
 }
 
+// Platform detection
+const IS_MACOS = process.platform === 'darwin';
+const IS_WINDOWS = process.platform === 'win32';
+
 function createWindow() {
-  mainWindow = new BrowserWindow({
+  const windowOptions = {
     width: 1200,
     height: 800,
     minWidth: 800,
     minHeight: 600,
     backgroundColor: '#020617',
-    titleBarStyle: 'hiddenInset',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
-  });
+  };
+
+  // macOS-specific: hidden titlebar with inset traffic lights
+  if (IS_MACOS) {
+    windowOptions.titleBarStyle = 'hiddenInset';
+  }
+
+  mainWindow = new BrowserWindow(windowOptions);
 
   // In development, load from Vite dev server
   if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
@@ -296,8 +306,18 @@ ipcMain.handle('open-external-url', async (event, url) => {
   }
 });
 
-// Check if Accessibility permission is granted (test AppleScript)
+// Get platform info for renderer
+ipcMain.handle('get-platform', () => {
+  return process.platform; // 'darwin', 'win32', 'linux'
+});
+
+// Check if Accessibility permission is granted (macOS only - test AppleScript)
 ipcMain.handle('check-accessibility-permission', async () => {
+  // Windows doesn't need accessibility permission for window tracking
+  if (!IS_MACOS) {
+    return { granted: true };
+  }
+
   const { exec } = require('child_process');
   const { promisify } = require('util');
   const execAsync = promisify(exec);
@@ -313,8 +333,12 @@ ipcMain.handle('check-accessibility-permission', async () => {
   }
 });
 
-// Open System Settings to Accessibility pane
+// Open System Settings to Accessibility pane (macOS only)
 ipcMain.handle('open-accessibility-settings', async () => {
+  if (!IS_MACOS) {
+    return { success: false, error: 'Not supported on this platform' };
+  }
+
   try {
     await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
     return { success: true };
