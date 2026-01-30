@@ -10,8 +10,9 @@
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && ELECTRON_RUN_AS_NODE= electron .\"",
     "electron:build": "vite build && electron-builder --mac --arm64 --x64",
-    "electron:build:win": "vite build && electron-builder --win --x64",
-    "electron:build:all": "vite build && electron-builder --mac --arm64 --x64 --win --x64"
+    "electron:build:win": "npm run generate-ico && vite build && electron-builder --win --x64",
+    "electron:build:all": "npm run generate-ico && vite build && electron-builder --mac --arm64 --x64 --win --x64",
+    "generate-ico": "node -e \"const fs=require('fs');if(!fs.existsSync('build/icon.ico')){require('png-to-ico')('build/icon.iconset/icon_256x256.png').then(b=>fs.writeFileSync('build/icon.ico',b)).then(()=>console.log('Generated icon.ico'))}else{console.log('icon.ico exists')}\""
   },
   "build": {
     "appId": "com.kronos.app",
