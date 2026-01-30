@@ -19,6 +19,7 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const POLL_INTERVAL_MS = 2000;        // 2 seconds
 const IDLE_THRESHOLD_MS = 300000;     // 5 minutes
 const TITLE_CHANGE_DEBOUNCE_MS = 10000; // 10 seconds - ignore rapid title changes within same app
+const MIN_EVENT_DURATION_SECONDS = 3; // Minimum duration to save an event (filters out brief window switches)
 
 // User ID from file (set by Electron app on login)
 let currentUserId = null;
@@ -196,9 +197,9 @@ Write-Output $idle
 
 async function getActiveWindowWindows() {
   try {
-    // Escape the PowerShell script for command line
-    const script = POWERSHELL_ACTIVE_WINDOW.replace(/\r?\n/g, ' ').replace(/"/g, '\\"');
-    const { stdout } = await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${script}"`, {
+    // Use Base64 encoding to avoid escaping issues with PowerShell
+    const scriptBase64 = Buffer.from(POWERSHELL_ACTIVE_WINDOW, 'utf16le').toString('base64');
+    const { stdout } = await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${scriptBase64}`, {
       windowsHide: true
     });
     const [appName, windowTitle] = stdout.trim().split('|||');
@@ -214,8 +215,9 @@ async function getActiveWindowWindows() {
 
 async function getSystemIdleTimeWindows() {
   try {
-    const script = POWERSHELL_IDLE_TIME.replace(/\r?\n/g, ' ').replace(/"/g, '\\"');
-    const { stdout } = await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${script}"`, {
+    // Use Base64 encoding to avoid escaping issues with PowerShell
+    const scriptBase64 = Buffer.from(POWERSHELL_IDLE_TIME, 'utf16le').toString('base64');
+    const { stdout } = await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${scriptBase64}`, {
       windowsHide: true
     });
     return parseFloat(stdout.trim()) || 0;
@@ -274,6 +276,55 @@ function isBrowser(appName) {
   ];
   const lowerName = appName.toLowerCase();
   return browsers.some(b => lowerName.includes(b.toLowerCase()));
+}
+
+// Check if window should be ignored (Windows system windows)
+function shouldIgnoreWindow(appName, windowTitle) {
+  if (!appName || !windowTitle) return true;
+
+  const lowerApp = appName.toLowerCase();
+  const lowerTitle = windowTitle.toLowerCase();
+
+  // Normalize for encoding issues (remove accents)
+  const normalizedTitle = lowerTitle.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  // Ignore Windows system UI elements
+  const systemPatterns = [
+    'conmutacion de tareas',   // Task Switching (ES) - without accent
+    'conmutación de tareas',   // Task Switching (ES) - with accent
+    'task switching',          // Task Switching (EN)
+    'windows shell experience',
+    'action center',
+    'centro de actividades',
+    'start',
+    'inicio',
+    'search',
+    'buscar',
+    'cortana',
+    'explorador de windows'    // Windows Explorer when showing task switcher
+  ];
+
+  // Check if title or normalized title matches any system pattern
+  for (const pattern of systemPatterns) {
+    if (lowerTitle.includes(pattern) || normalizedTitle.includes(pattern)) {
+      return true;
+    }
+  }
+
+  // Also check app name for known system processes
+  if (lowerApp === 'explorer' || lowerApp === 'explorador de windows') {
+    // If Explorer AND title contains task switching keywords
+    if (normalizedTitle.includes('conmutacion') || normalizedTitle.includes('task switch')) {
+      return true;
+    }
+  }
+
+  // Ignore if title is empty or just whitespace
+  if (!windowTitle.trim()) {
+    return true;
+  }
+
+  return false;
 }
 
 // ============================================================================
@@ -410,19 +461,32 @@ async function track() {
     }
 
     if (windowChanged && lastWindow && lastTimestamp) {
-      await saveEvent(
-        lastTimestamp,
-        lastWindow.appName,
-        lastWindow.windowTitle,
-        lastWindow.url,
-        durationSeconds,
-        lastWindow.isIdle
-      );
+      // Only save events that meet duration threshold and aren't system windows
+      const meetsMinDuration = durationSeconds >= MIN_EVENT_DURATION_SECONDS;
+      const isNotSystemWindow = !shouldIgnoreWindow(lastWindow.appName, lastWindow.windowTitle);
 
-      const titlePreview = lastWindow.windowTitle.substring(0, 40);
-      console.log(
-        `[${formatTimestamp(lastTimestamp)}] ${lastWindow.appName} - "${titlePreview}${titlePreview.length < lastWindow.windowTitle.length ? '...' : ''}" (${durationSeconds}s)${lastWindow.isIdle ? ' [IDLE]' : ''}`
-      );
+      if (meetsMinDuration && (isNotSystemWindow || lastWindow.isIdle)) {
+        await saveEvent(
+          lastTimestamp,
+          lastWindow.appName,
+          lastWindow.windowTitle,
+          lastWindow.url,
+          durationSeconds,
+          lastWindow.isIdle
+        );
+
+        const titlePreview = lastWindow.windowTitle.substring(0, 40);
+        console.log(
+          `[${formatTimestamp(lastTimestamp)}] ${lastWindow.appName} - "${titlePreview}${titlePreview.length < lastWindow.windowTitle.length ? '...' : ''}" (${durationSeconds}s)${lastWindow.isIdle ? ' [IDLE]' : ''}`
+        );
+      } else {
+        // Optionally log filtered events for debugging
+        if (!meetsMinDuration) {
+          console.log(`[Filtered: too short] ${lastWindow.appName} - ${lastWindow.windowTitle} (${durationSeconds}s)`);
+        } else if (!isNotSystemWindow) {
+          console.log(`[Filtered: system window] ${lastWindow.appName} - ${lastWindow.windowTitle}`);
+        }
+      }
     }
 
     if (!lastWindow) {

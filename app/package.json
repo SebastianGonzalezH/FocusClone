@@ -8,9 +8,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && ELECTRON_RUN_AS_NODE= electron .\"",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && node start-electron.js\"",
     "electron:build": "vite build && electron-builder --mac --arm64 --x64",
-    "electron:build:win": "npm run generate-ico && vite build && electron-builder --win --x64",
+    "electron:build:win": "vite build && electron-builder --win --x64",
+    "electron:build:win:icon": "npm run generate-ico && vite build && electron-builder --win --x64",
     "electron:build:all": "npm run generate-ico && vite build && electron-builder --mac --arm64 --x64 --win --x64",
     "generate-ico": "node -e \"const fs=require('fs');if(!fs.existsSync('build/icon.ico')){require('png-to-ico')('build/icon.iconset/icon_256x256.png').then(b=>fs.writeFileSync('build/icon.ico',b)).then(()=>console.log('Generated icon.ico'))}else{console.log('icon.ico exists')}\""
   },
@@ -82,7 +83,7 @@
           ]
         }
       ],
-      "icon": "build/icon.ico"
+      "sign": null
     },
     "nsis": {
       "oneClick": false,
@@ -109,6 +110,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
     "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",
     "electron": "^28.3.3",
     "electron-builder": "^24.9.1",
     "png-to-ico": "^2.1.8",
