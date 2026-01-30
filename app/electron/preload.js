@@ -9,5 +9,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Auth session persistence
   saveAuthSession: (session) => ipcRenderer.invoke('save-auth-session', session),
   getAuthSession: () => ipcRenderer.invoke('get-auth-session'),
-  clearAuthSession: () => ipcRenderer.invoke('clear-auth-session')
+  clearAuthSession: () => ipcRenderer.invoke('clear-auth-session'),
+  // OAuth - open URL in external browser
+  openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url),
+  // OAuth callback listener
+  onOAuthCallback: (callback) => {
+    ipcRenderer.on('oauth-callback', (event, data) => callback(data));
+  },
+  // Accessibility permission check
+  checkAccessibilityPermission: () => ipcRenderer.invoke('check-accessibility-permission'),
+  openAccessibilitySettings: () => ipcRenderer.invoke('open-accessibility-settings')
 });

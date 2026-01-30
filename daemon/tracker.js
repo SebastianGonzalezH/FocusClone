@@ -200,6 +200,13 @@ async function getSystemIdleTime() {
 }
 
 async function track() {
+  // If no user, try to load user file (user may have just logged in)
+  if (!currentUserId) {
+    loadUserId();
+    if (!currentUserId) return; // Still no user, skip this cycle
+    console.log('User logged in, starting tracking...');
+  }
+
   // Check if tracking is paused
   loadPauseState();
   if (isPaused) return;
@@ -353,6 +360,18 @@ async function shutdown() {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
+// Safety: Exit if parent process dies (prevents orphaned daemons)
+const parentPid = process.ppid;
+function checkParentAlive() {
+  try {
+    // Sending signal 0 checks if process exists without killing it
+    process.kill(parentPid, 0);
+  } catch (err) {
+    console.log('Parent process died, shutting down daemon...');
+    shutdown();
+  }
+}
+
 // Main
 async function main() {
   console.log('Initializing tracker...');
@@ -366,12 +385,16 @@ async function main() {
   loadUserId();
 
   if (!currentUserId) {
-    console.log('No user logged in. Tracker will wait for login.');
-    process.exit(0);
+    console.log('No user logged in. Tracker will poll until user logs in...');
+  } else {
+    console.log('User found, tracking active.');
   }
 
   console.log('Tracker started. Polling every 2 seconds...');
   console.log('Press Ctrl+C to stop.\n');
+
+  // Check if parent (Electron) is still alive every 5 seconds
+  setInterval(checkParentAlive, 5000);
 
   // Start polling
   setInterval(track, POLL_INTERVAL_MS);

@@ -143,13 +143,15 @@ export default function TemplateSelection() {
       return;
     }
 
+    // Use upsert to create profile if it doesn't exist
     const { error: profileError } = await supabase
       .from('user_profiles')
-      .update({
+      .upsert({
+        id: user.id,
+        email: user.email,
         template_id: selectedTemplate,
         onboarding_completed: true
-      })
-      .eq('id', user.id);
+      }, { onConflict: 'id' });
 
     if (profileError) {
       console.error('Error updating profile:', profileError.message);

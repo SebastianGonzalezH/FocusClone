@@ -4,6 +4,7 @@ import { LayoutDashboard, List, Tags, LogOut, Power, Settings } from 'lucide-rea
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AccessibilityBanner } from './components/AccessibilityBanner';
 import Dashboard from './pages/Dashboard';
 import EventLog from './pages/EventLog';
 import Categories from './pages/Categories';
@@ -138,7 +139,8 @@ function AppLayout() {
       </nav>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto flex flex-col">
+        <AccessibilityBanner />
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -146,7 +148,7 @@ function AppLayout() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="p-8"
+            className="p-8 flex-1"
           >
             <Routes>
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

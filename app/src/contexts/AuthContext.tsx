@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -61,21 +61,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
+  const lastProcessedUserIdRef = useRef<string | null>(null);
 
-  // Fetch user profile from database (optional - table may not exist)
+  // Fetch user profile from database with timeout (optional - table may not exist)
   async function fetchProfile(userId: string): Promise<UserProfile | null> {
     try {
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), 5000); // 5 second timeout
+      });
+
+      const fetchPromise = supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .single()
+        .then(({ data, error }) => {
+          if (error) return null;
+          return data as UserProfile;
+        });
 
-      if (error) {
-        // Silently handle - user_profiles table may not exist yet
-        return null;
-      }
-      return data as UserProfile;
+      return await Promise.race([fetchPromise, timeoutPromise]);
     } catch {
       return null;
     }
@@ -113,6 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (session?.user) {
         console.log('AuthContext: User found, writing user file...');
+        // Mark this user as processed to prevent duplicate handling in onAuthStateChange
+        lastProcessedUserIdRef.current = session.user.id;
         await writeUserFile(session.user.id, session.user.email || '');
 
         // Fetch profile - track loading state
@@ -135,13 +143,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    // Listen for auth changes - only handle SIGNED_OUT
-    // SIGNED_IN is handled by getSession() above to avoid race conditions
+    // Listen for OAuth callback from Electron (custom protocol)
+    if (window.electronAPI?.onOAuthCallback) {
+      window.electronAPI.onOAuthCallback(async (data) => {
+        console.log('AuthContext: OAuth callback received');
+        try {
+          // Set the session using the tokens from the callback
+          const { data: sessionData, error } = await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token
+          });
+
+          if (error) {
+            console.error('AuthContext: Error setting session from OAuth:', error);
+            return;
+          }
+
+          if (sessionData.session) {
+            // Mark this user as processed to prevent duplicate handling
+            lastProcessedUserIdRef.current = sessionData.session.user.id;
+            setSession(sessionData.session);
+            setUser(sessionData.session.user);
+            await writeUserFile(sessionData.session.user.id, sessionData.session.user.email || '');
+
+            // Fetch profile
+            setProfileLoading(true);
+            const userProfile = await fetchProfile(sessionData.session.user.id);
+            setProfile(userProfile);
+            setProfileLoading(false);
+          }
+        } catch (err) {
+          console.error('AuthContext: OAuth callback error:', err);
+        }
+      });
+    }
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log('AuthContext: onAuthStateChange', event);
 
-        if (event === 'SIGNED_OUT') {
+        // Handle token refresh - just update session, don't refetch profile
+        if (event === 'TOKEN_REFRESHED' && newSession) {
+          console.log('AuthContext: Token refreshed, updating session');
+          setSession(newSession);
+          return;
+        }
+
+        // Handle initial session - skip if we already processed in getSession
+        if (event === 'INITIAL_SESSION') {
+          console.log('AuthContext: Initial session event, skipping (handled by getSession)');
+          return;
+        }
+
+        if (event === 'SIGNED_IN' && newSession) {
+          // Skip if we already processed this user (prevents infinite loop)
+          if (newSession.user.id === lastProcessedUserIdRef.current) {
+            console.log('AuthContext: Skipping duplicate SIGNED_IN for same user');
+            return;
+          }
+
+          lastProcessedUserIdRef.current = newSession.user.id;
+          setSession(newSession);
+          setUser(newSession.user);
+          await writeUserFile(newSession.user.id, newSession.user.email || '');
+
+          // Fetch profile
+          setProfileLoading(true);
+          const userProfile = await fetchProfile(newSession.user.id);
+          setProfile(userProfile);
+          setProfileLoading(false);
+        } else if (event === 'SIGNED_OUT') {
+          lastProcessedUserIdRef.current = null;
           setSession(null);
           setUser(null);
           setProfile(null);
@@ -164,19 +237,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithGoogle() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-        queryParams: {
-          prompt: 'select_account'
+    // Check if we're in Electron (packaged app)
+    const isElectron = !!window.electronAPI?.openExternalUrl;
+
+    if (isElectron) {
+      // Use external browser with custom protocol callback
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'kronos://auth-callback',
+          skipBrowserRedirect: true, // Don't redirect, just get the URL
+          queryParams: {
+            prompt: 'select_account'
+          }
         }
+      });
+
+      if (error) return { error };
+
+      // Open the OAuth URL in the system browser
+      if (data?.url && window.electronAPI) {
+        await window.electronAPI.openExternalUrl(data.url);
       }
-    });
-    return { error };
+
+      return { error: null };
+    } else {
+      // Standard web OAuth flow
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: {
+            prompt: 'select_account'
+          }
+        }
+      });
+      return { error };
+    }
   }
 
   async function signOut() {
+    lastProcessedUserIdRef.current = null;
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);

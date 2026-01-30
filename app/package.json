@@ -31,6 +31,12 @@
         ]
       }
     ],
+    "protocols": [
+      {
+        "name": "Kronos",
+        "schemes": ["kronos"]
+      }
+    ],
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "build/icon.icns",
